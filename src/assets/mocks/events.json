@@ -1,0 +1,112 @@
+[
+    {
+        "id": "896fc2d1-7ce3-4e58-aaab-deeea714cbbc",
+        "title": "Gothenburg Tech Meetup",
+        "description": "A gathering for tech enthusiasts in Gothenburg to discuss the latest trends in software development and AI.",
+        "date": "2026-01-17T15:34:00.000Z",
+        "address": {
+            "id": "e623a84a-7d6e-48bb-ae88-b8e920478bb1",
+            "street": "Lindholmspiren 3",
+            "city": "Göteborg",
+            "zipCode": "417 56",
+            "country": "Sweden",
+            "locationName": "Lindholmen Science Park"
+        },
+        "organizers": [
+            {
+                "id": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+                "username": "testuser",
+                "role": "ORGANIZER",
+                "email": "test@mail.com",
+                "avatar": "https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
+            }
+        ],
+        "members": [
+            {
+                "id": "e212f8da-8256-4762-bc09-e6ae20b98c23",
+                "username": "sven_goteborg",
+                "role": "MEMBER",
+                "email": "sven@mail.se",
+                "avatar": "https://primefaces.org/cdn/primevue/images/avatar/asiyajavayant.png"
+            },
+            {
+                "id": "6c9a1907-cf69-40c2-81d1-5599c652b6ce",
+                "username": "karin_k",
+                "role": "MEMBER",
+                "email": "karin@mail.se",
+                "avatar": "https://primefaces.org/cdn/primevue/images/avatar/annafali.png"
+            }
+        ],
+        "tasks": [
+            {
+                "id": "8428d018-444e-4780-8c02-56951a4a0cc1",
+                "description": "Book meeting room at Lindholmen",
+                "completed": false,
+                "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+                "assignedToUsername": "testuser",
+                "dueDate": "2026-01-09T15:34:00.000Z",
+                "eventId": "896fc2d1-7ce3-4e58-aaab-deeea714cbbc"
+            },
+            {
+                "id": "36fb35b0-cffc-43d7-8a16-6f64c6c584fa",
+                "description": "Prepare presentation slides",
+                "completed": false,
+                "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+                "assignedToUsername": "testuser",
+                "dueDate": "2026-01-12T15:34:00.000Z",
+                "eventId": "896fc2d1-7ce3-4e58-aaab-deeea714cbbc"
+            }
+        ],
+        "participantCount": 3,
+        "taskCount": 2,
+        "completedTaskCount": 0,
+        "hasUnfinishedTasks": true
+    },
+    {
+        "id": "a5f8b9d3-e2c1-4d0a-9f8e-7b6c5d4a3b21",
+        "title": "Summer Party at Liseberg",
+        "description": "Annual team celebration at Scandinavia's largest amusement park.",
+        "date": "2024-07-20T14:00:00.000Z",
+        "address": {
+            "id": "e623a84a-7d6e-48bb-ae88-b8e920478bb2",
+            "street": "Örgrytevägen 5",
+            "city": "Göteborg",
+            "zipCode": "412 51",
+            "country": "Sweden",
+            "locationName": "Liseberg"
+        },
+        "organizers": [
+            {
+                "id": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+                "username": "testuser",
+                "role": "ORGANIZER",
+                "email": "test@mail.com",
+                "avatar": "https://primefaces.org/cdn/primevue/images/avatar/amyelsner.png"
+            }
+        ],
+        "members": [
+            {
+                "id": "4cd33f07-1f55-4cd8-9195-a0548e586e19",
+                "username": "olof_p",
+                "role": "MEMBER",
+                "email": "olof@mail.se",
+                "avatar": "https://primefaces.org/cdn/primevue/images/avatar/onyamalimba.png"
+            }
+        ],
+        "tasks": [
+            {
+                "id": "46cfc54f-17d7-4a30-99ed-fd40eb2bbb35",
+                "description": "Order Liseberg entrance tickets",
+                "completed": true,
+                "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+                "assignedToUsername": "testuser",
+                "dueDate": "2024-07-01T09:00:00.000Z",
+                "eventId": "a5f8b9d3-e2c1-4d0a-9f8e-7b6c5d4a3b21"
+            }
+        ],
+        "participantCount": 2,
+        "taskCount": 1,
+        "completedTaskCount": 1,
+        "hasUnfinishedTasks": false
+    }
+]

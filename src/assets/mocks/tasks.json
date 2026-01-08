@@ -1,0 +1,29 @@
+[
+    {
+        "id": "8428d018-444e-4780-8c02-56951a4a0cc1",
+        "description": "Book meeting room at Lindholmen",
+        "completed": false,
+        "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+        "assignedToUsername": "testuser",
+        "eventId": "896fc2d1-7ce3-4e58-aaab-deeea714cbbc",
+        "dueDate": "2026-01-09T15:34:00.000Z"
+    },
+    {
+        "id": "36fb35b0-cffc-43d7-8a16-6f64c6c584fa",
+        "description": "Prepare presentation slides",
+        "completed": false,
+        "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+        "assignedToUsername": "testuser",
+        "eventId": "896fc2d1-7ce3-4e58-aaab-deeea714cbbc",
+        "dueDate": "2026-01-12T15:34:00.000Z"
+    },
+    {
+        "id": "46cfc54f-17d7-4a30-99ed-fd40eb2bbb35",
+        "description": "Order Liseberg entrance tickets",
+        "completed": true,
+        "assignedToId": "1080cf43-f931-416f-8aeb-ced8b0922edc",
+        "assignedToUsername": "testuser",
+        "eventId": "a5f8b9d3-e2c1-4d0a-9f8e-7b6c5d4a3b21",
+        "dueDate": "2024-07-01T09:00:00.000Z"
+    }
+]
