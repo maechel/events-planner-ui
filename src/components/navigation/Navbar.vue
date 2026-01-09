@@ -122,7 +122,7 @@ onUnmounted(() => {
                 <Button
                     variant="text"
                     size="small"
-                    @click="
+                    @click.stop="
                         authModalMode = 'login';
                         authModalVisible = true;
                     "
@@ -132,7 +132,7 @@ onUnmounted(() => {
                 </Button>
                 <Button
                     size="small"
-                    @click="
+                    @click.stop="
                         authModalMode = 'register';
                         authModalVisible = true;
                     "

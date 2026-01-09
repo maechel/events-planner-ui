@@ -1,7 +1,7 @@
-import type { UserSummaryDTO } from './users';
+import type { UserSummary } from './users';
 import type { EntityId } from './common';
 
-export interface TaskSummaryDTO {
+export interface TaskSummary {
     id: EntityId;
     description: string;
     completed: boolean;
@@ -11,8 +11,8 @@ export interface TaskSummaryDTO {
     eventId?: EntityId;
 }
 
-export interface TaskDetailDTO extends TaskSummaryDTO {
-    assignedTo?: UserSummaryDTO;
+export interface TaskDetail extends TaskSummary {
+    assignedTo?: UserSummary;
     createdAt?: string;
     updatedAt?: string;
 }

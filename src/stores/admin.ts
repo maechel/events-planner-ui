@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useEventStore } from '@/stores/event';
-import type { UserDetailDTO } from '@/types/users';
+import type { UserDetail } from '@/types/users';
 import type { EntityId } from '@/types/common';
 import { adminService } from '@/services/adminService';
 import mockUsersData from '@/assets/mocks/users.json';
@@ -91,7 +91,7 @@ function calculateKPIs(
 
 export const useAdminStore = defineStore('admin', () => {
     const stats = ref<AdminStats | null>(null);
-    const users = ref<UserDetailDTO[]>([]);
+    const users = ref<UserDetail[]>([]);
     const loading = ref(false);
 
     async function fetchUsers() {
@@ -101,14 +101,14 @@ export const useAdminStore = defineStore('admin', () => {
         } catch (error) {
             console.error('Failed to fetch users:', error);
             if (users.value.length === 0) {
-                users.value = mockUsersData as UserDetailDTO[];
+                users.value = mockUsersData as UserDetail[];
             }
         } finally {
             loading.value = false;
         }
     }
 
-    async function createUser(userData: Partial<UserDetailDTO>) {
+    async function createUser(userData: Partial<UserDetail>) {
         loading.value = true;
         try {
             const newUser = await adminService.createUser(userData);
@@ -119,7 +119,7 @@ export const useAdminStore = defineStore('admin', () => {
         }
     }
 
-    async function updateUser(id: EntityId, userData: Partial<UserDetailDTO>) {
+    async function updateUser(id: EntityId, userData: Partial<UserDetail>) {
         loading.value = true;
         try {
             const updatedUser = await adminService.updateUser(id, userData);

@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useRouter } from 'vue-router';
 import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
 import Skeleton from 'primevue/skeleton';
 import { useEventStore } from '@/stores/event';
 import EventForm from '@/components/forms/EventForm.vue';
@@ -23,10 +22,6 @@ onMounted(async () => {
 const viewDetails = (id: string | number) => {
     router.push(`/events/${id}`);
 };
-
-const handleCreateSuccess = () => {
-    showCreateDialog.value = false;
-};
 </script>
 
 <template>
@@ -44,23 +39,12 @@ const handleCreateSuccess = () => {
                 label="Create Event"
                 icon="fa-solid fa-calendar-plus"
                 size="large"
-                @click="showCreateDialog = true"
+                @click.stop="showCreateDialog = true"
                 class="shadow-xl shadow-primary/20 px-8 py-4 font-black text-lg"
             />
         </div>
 
-        <Dialog
-            v-model:visible="showCreateDialog"
-            modal
-            header="Create New Event"
-            :style="{ width: '45rem' }"
-            :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-        >
-            <EventForm
-                @success="handleCreateSuccess"
-                @cancel="showCreateDialog = false"
-            />
-        </Dialog>
+        <EventForm v-model:visible="showCreateDialog" />
 
         <div
             v-if="loading && events.length === 0"
@@ -143,7 +127,7 @@ const handleCreateSuccess = () => {
             <Button
                 label="Create Your First Event"
                 icon="fa-solid fa-plus"
-                @click="showCreateDialog = true"
+                @click.stop="showCreateDialog = true"
                 size="large"
                 class="px-8 py-4 font-black"
             />

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import type { EventDetailDTO } from '@/types/events';
+import type { EventDetail } from '@/types/events';
 
 type PropTypes = {
-    event: EventDetailDTO;
+    event: EventDetail;
 };
 
 const props = defineProps<PropTypes>();

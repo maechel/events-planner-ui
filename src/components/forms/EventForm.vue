@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ToastSeverity } from '@/constants/ui';
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useForm } from 'vee-validate';
 import { eventSchema, eventInitialValues } from '@/schemas/event';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import DatePicker from 'primevue/datepicker';
 import Button from 'primevue/button';
+import Dialog from 'primevue/dialog';
 import Stepper from 'primevue/stepper';
 import StepList from 'primevue/steplist';
 import StepPanels from 'primevue/steppanels';
@@ -15,27 +16,34 @@ import StepPanel from 'primevue/steppanel';
 import { useEventStore } from '@/stores/event';
 import { useToast } from 'primevue/usetoast';
 import { parseISO } from 'date-fns';
-import type { EventDetailDTO } from '@/types/events';
+import type { EventDetail } from '@/types/events';
 import type { AxiosError } from 'axios';
 
 type PropTypes = {
-    initialData?: EventDetailDTO;
+    initialData?: EventDetail;
     isEdit?: boolean;
+    visible: boolean;
 };
 
 type EmitTypes = {
-    success: [data: EventDetailDTO];
+    success: [data: EventDetail];
     cancel: [];
+    'update:visible': [value: boolean];
 };
 
 const props = defineProps<PropTypes>();
 const emit = defineEmits<EmitTypes>();
 
+const isVisible = computed({
+    get: () => props.visible,
+    set: (value) => emit('update:visible', value),
+});
+
 const eventStore = useEventStore();
 const toast = useToast();
 const loading = ref(false);
 
-const { handleSubmit, errors, defineField, values } = useForm({
+const { handleSubmit, errors, defineField, values, resetForm } = useForm({
     validationSchema: eventSchema,
     initialValues: props.initialData
         ? {
@@ -50,6 +58,15 @@ const { handleSubmit, errors, defineField, values } = useForm({
           }
         : eventInitialValues,
 });
+
+watch(
+    () => props.visible,
+    (newVal) => {
+        if (!newVal) {
+            resetForm();
+        }
+    },
+);
 
 const [title] = defineField('title');
 const [description] = defineField('description');
@@ -84,9 +101,9 @@ const onSubmit = handleSubmit(async (formValues) => {
             hasUnfinishedTasks: false,
         };
 
-        let result: EventDetailDTO;
+        let result: EventDetail;
         if (props.isEdit && props.initialData?.id) {
-            result = (await eventStore.updateEvent(props.initialData.id, formattedValues)) as EventDetailDTO;
+            result = (await eventStore.updateEvent(props.initialData.id, formattedValues)) as EventDetail;
             toast.add({
                 severity: ToastSeverity.SUCCESS,
                 summary: 'Updated',
@@ -94,7 +111,7 @@ const onSubmit = handleSubmit(async (formValues) => {
                 life: 3000,
             });
         } else {
-            result = (await eventStore.createEvent(formattedValues)) as unknown as EventDetailDTO;
+            result = (await eventStore.createEvent(formattedValues)) as unknown as EventDetail;
             toast.add({
                 severity: ToastSeverity.SUCCESS,
                 summary: 'Created',
@@ -102,6 +119,7 @@ const onSubmit = handleSubmit(async (formValues) => {
                 life: 3000,
             });
         }
+        isVisible.value = false;
         emit('success', result);
     } catch (error) {
         const axiosError = error as AxiosError<{ message: string }>;
@@ -125,242 +143,253 @@ const isStepOneValid = computed(() => {
 </script>
 
 <template>
-    <div class="card">
-        <Stepper value="1">
-            <StepList>
-                <Step value="1">General Info</Step>
-                <Step value="2">Address Details</Step>
-            </StepList>
-            <StepPanels>
-                <StepPanel
-                    v-slot="{ activateCallback }"
-                    value="1"
-                >
-                    <div class="flex flex-col gap-4 mt-4">
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="title"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Event Title</label
-                            >
-                            <InputText
-                                id="title"
-                                v-model="title"
-                                :class="{ 'p-invalid': errors.title }"
-                                placeholder="e.g. Annual Tech Conference"
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.title"
-                                    class="text-red-500"
-                                    >{{ errors.title }}</small
-                                >
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="description"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Description</label
-                            >
-                            <Textarea
-                                id="description"
-                                v-model="description"
-                                :class="{ 'p-invalid': errors.description }"
-                                rows="3"
-                                placeholder="Tell us about the event..."
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.description"
-                                    class="text-red-500"
-                                    >{{ errors.description }}</small
-                                >
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="date"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Date & Time</label
-                            >
-                            <DatePicker
-                                id="date"
-                                v-model="dateValue"
-                                showTime
-                                hourFormat="24"
-                                dateFormat="yy-mm-dd"
-                                :class="{ 'p-invalid': errors.date }"
-                                placeholder="Select date and time"
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.date"
-                                    class="text-red-500"
-                                    >{{ errors.date }}</small
-                                >
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="locationName"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Venue Name</label
-                            >
-                            <InputText
-                                id="locationName"
-                                v-model="locationName"
-                                :class="{ 'p-invalid': errors.locationName }"
-                                placeholder="e.g. Grand Hotel"
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.locationName"
-                                    class="text-red-500"
-                                    >{{ errors.locationName }}</small
-                                >
-                            </div>
-                        </div>
-
-                        <div class="flex justify-end gap-2 pt-4">
-                            <Button
-                                variant="text"
-                                @click.prevent="emit('cancel')"
-                            >
-                                <span>Cancel</span>
-                            </Button>
-                            <Button
-                                @click.stop="activateCallback('2')"
-                                :disabled="!isStepOneValid"
-                            >
-                                <span>Next</span>
-                                <FontAwesomeIcon icon="fa-solid fa-arrow-right" />
-                            </Button>
-                        </div>
-                    </div>
-                </StepPanel>
-
-                <StepPanel
-                    v-slot="{ activateCallback }"
-                    value="2"
-                >
-                    <div class="flex flex-col gap-4 mt-4">
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="street"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Street</label
-                            >
-                            <InputText
-                                id="street"
-                                v-model="street"
-                                :class="{ 'p-invalid': errors.street }"
-                                placeholder="e.g. Main St 1"
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.street"
-                                    class="text-red-500"
-                                    >{{ errors.street }}</small
-                                >
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Dialog
+        v-model:visible="isVisible"
+        modal
+        :header="isEdit ? 'Edit Event' : 'Create Event'"
+        :style="{ width: '45rem' }"
+        :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
+    >
+        <form
+            @submit.prevent="onSubmit"
+            class="card"
+        >
+            <Stepper value="1">
+                <StepList>
+                    <Step value="1">General Info</Step>
+                    <Step value="2">Address Details</Step>
+                </StepList>
+                <StepPanels>
+                    <StepPanel
+                        v-slot="{ activateCallback }"
+                        value="1"
+                    >
+                        <div class="flex flex-col gap-4 mt-4">
                             <div class="flex flex-col gap-2">
                                 <label
-                                    for="city"
+                                    for="title"
                                     class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                    >City</label
+                                    >Event Title</label
                                 >
                                 <InputText
-                                    id="city"
-                                    v-model="city"
-                                    :class="{ 'p-invalid': errors.city }"
-                                    placeholder="e.g. Gothenburg"
+                                    id="title"
+                                    v-model="title"
+                                    :class="{ 'p-invalid': errors.title }"
+                                    placeholder="e.g. Annual Tech Conference"
                                 />
                                 <div class="h-5">
                                     <small
-                                        v-if="errors.city"
+                                        v-if="errors.title"
                                         class="text-red-500"
-                                        >{{ errors.city }}</small
+                                        >{{ errors.title }}</small
                                     >
                                 </div>
                             </div>
 
                             <div class="flex flex-col gap-2">
                                 <label
-                                    for="zipCode"
+                                    for="description"
                                     class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                    >Zip Code</label
+                                    >Description</label
                                 >
-                                <InputText
-                                    id="zipCode"
-                                    v-model="zipCode"
-                                    :class="{ 'p-invalid': errors.zipCode }"
-                                    placeholder="e.g. 412 51"
+                                <Textarea
+                                    id="description"
+                                    v-model="description"
+                                    :class="{ 'p-invalid': errors.description }"
+                                    rows="3"
+                                    placeholder="Tell us about the event..."
                                 />
                                 <div class="h-5">
                                     <small
-                                        v-if="errors.zipCode"
+                                        v-if="errors.description"
                                         class="text-red-500"
-                                        >{{ errors.zipCode }}</small
+                                        >{{ errors.description }}</small
                                     >
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="flex flex-col gap-2">
-                            <label
-                                for="country"
-                                class="font-semibold text-surface-700 dark:text-surface-0/80"
-                                >Country</label
-                            >
-                            <InputText
-                                id="country"
-                                v-model="country"
-                                :class="{ 'p-invalid': errors.country }"
-                                placeholder="e.g. Sweden"
-                            />
-                            <div class="h-5">
-                                <small
-                                    v-if="errors.country"
-                                    class="text-red-500"
-                                    >{{ errors.country }}</small
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    for="date"
+                                    class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                    >Date & Time</label
                                 >
+                                <DatePicker
+                                    id="date"
+                                    v-model="dateValue"
+                                    showTime
+                                    hourFormat="24"
+                                    dateFormat="yy-mm-dd"
+                                    :class="{ 'p-invalid': errors.date }"
+                                    placeholder="Select date and time"
+                                />
+                                <div class="h-5">
+                                    <small
+                                        v-if="errors.date"
+                                        class="text-red-500"
+                                        >{{ errors.date }}</small
+                                    >
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="flex justify-between gap-2 pt-4">
-                            <Button
-                                variant="text"
-                                @click.stop="activateCallback('1')"
-                            >
-                                <FontAwesomeIcon icon="fa-solid fa-arrow-left" />
-                                <span>Back</span>
-                            </Button>
-                            <div class="flex gap-2">
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    for="locationName"
+                                    class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                    >Venue Name</label
+                                >
+                                <InputText
+                                    id="locationName"
+                                    v-model="locationName"
+                                    :class="{ 'p-invalid': errors.locationName }"
+                                    placeholder="e.g. Grand Hotel"
+                                />
+                                <div class="h-5">
+                                    <small
+                                        v-if="errors.locationName"
+                                        class="text-red-500"
+                                        >{{ errors.locationName }}</small
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-4">
                                 <Button
                                     variant="text"
-                                    @click.prevent.stop="emit('cancel')"
-                                    :disabled="loading"
+                                    @click.prevent.stop="isVisible = false"
                                 >
                                     <span>Cancel</span>
                                 </Button>
                                 <Button
-                                    :loading="loading"
-                                    @click.stop="onSubmit"
+                                    @click.stop="activateCallback('2')"
+                                    :disabled="!isStepOneValid"
                                 >
-                                    <span>{{ isEdit ? 'Update Event' : 'Create Event' }}</span>
+                                    <span>Next</span>
+                                    <FontAwesomeIcon icon="fa-solid fa-arrow-right" />
                                 </Button>
                             </div>
                         </div>
-                    </div>
-                </StepPanel>
-            </StepPanels>
-        </Stepper>
-    </div>
+                    </StepPanel>
+
+                    <StepPanel
+                        v-slot="{ activateCallback }"
+                        value="2"
+                    >
+                        <div class="flex flex-col gap-4 mt-4">
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    for="street"
+                                    class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                    >Street</label
+                                >
+                                <InputText
+                                    id="street"
+                                    v-model="street"
+                                    :class="{ 'p-invalid': errors.street }"
+                                    placeholder="e.g. Main St 1"
+                                />
+                                <div class="h-5">
+                                    <small
+                                        v-if="errors.street"
+                                        class="text-red-500"
+                                        >{{ errors.street }}</small
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="flex flex-col gap-2">
+                                    <label
+                                        for="city"
+                                        class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                        >City</label
+                                    >
+                                    <InputText
+                                        id="city"
+                                        v-model="city"
+                                        :class="{ 'p-invalid': errors.city }"
+                                        placeholder="e.g. Gothenburg"
+                                    />
+                                    <div class="h-5">
+                                        <small
+                                            v-if="errors.city"
+                                            class="text-red-500"
+                                            >{{ errors.city }}</small
+                                        >
+                                    </div>
+                                </div>
+
+                                <div class="flex flex-col gap-2">
+                                    <label
+                                        for="zipCode"
+                                        class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                        >Zip Code</label
+                                    >
+                                    <InputText
+                                        id="zipCode"
+                                        v-model="zipCode"
+                                        :class="{ 'p-invalid': errors.zipCode }"
+                                        placeholder="e.g. 412 51"
+                                    />
+                                    <div class="h-5">
+                                        <small
+                                            v-if="errors.zipCode"
+                                            class="text-red-500"
+                                            >{{ errors.zipCode }}</small
+                                        >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col gap-2">
+                                <label
+                                    for="country"
+                                    class="font-semibold text-surface-700 dark:text-surface-0/80"
+                                    >Country</label
+                                >
+                                <InputText
+                                    id="country"
+                                    v-model="country"
+                                    :class="{ 'p-invalid': errors.country }"
+                                    placeholder="e.g. Sweden"
+                                />
+                                <div class="h-5">
+                                    <small
+                                        v-if="errors.country"
+                                        class="text-red-500"
+                                        >{{ errors.country }}</small
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between gap-2 pt-4">
+                                <Button
+                                    variant="text"
+                                    @click.stop="activateCallback('1')"
+                                >
+                                    <FontAwesomeIcon icon="fa-solid fa-arrow-left" />
+                                    <span>Back</span>
+                                </Button>
+                                <div class="flex gap-2">
+                                    <Button
+                                        variant="text"
+                                        @click.prevent.stop="isVisible = false"
+                                        :disabled="loading"
+                                    >
+                                        <span>Cancel</span>
+                                    </Button>
+                                    <Button
+                                        :loading="loading"
+                                        type="submit"
+                                    >
+                                        <span>{{ isEdit ? 'Update Event' : 'Create Event' }}</span>
+                                    </Button>
+                                </div>
+                            </div>
+                        </div>
+                    </StepPanel>
+                </StepPanels>
+            </Stepper>
+        </form>
+    </Dialog>
 </template>

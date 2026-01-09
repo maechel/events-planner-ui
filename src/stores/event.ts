@@ -1,10 +1,11 @@
 import { defineStore, storeToRefs } from 'pinia';
 import { ref } from 'vue';
 import { useAuthStore } from './auth';
-import type { TaskSummaryDTO } from '@/types/tasks';
-import type { EventDetailDTO, EventSummaryDTO, AddressDTO } from '@/types/events';
-import type { ParticipantDTO } from '@/types/users';
+import type { TaskSummary } from '@/types/tasks';
+import type { EventDetail, EventSummary, Address } from '@/types/events';
+export type { Participant } from '@/types/users';
 import type { EntityId } from '@/types/common';
+import { userService } from '@/services/userService';
 import { eventService } from '@/services/eventService';
 import { taskService } from '@/services/taskService';
 import { useEventLogic } from '@/composables/useEventLogic';
@@ -12,11 +13,10 @@ import { ParticipantRole } from '@/constants/roles';
 import mockEventsData from '@/assets/mocks/events.json';
 import mockTasksData from '@/assets/mocks/tasks.json';
 
-export type Task = TaskSummaryDTO;
-export type Participant = ParticipantDTO;
-export type Event = EventSummaryDTO;
+export type Task = TaskSummary;
+export type Event = EventSummary;
 
-export interface MockEvent extends EventDetailDTO {
+export interface MockEvent extends EventDetail {
     participantCount: number;
     taskCount: number;
     completedTaskCount: number;
@@ -29,12 +29,12 @@ function getFilteredMockEvents(mockEvents: MockEvent[], userId?: EntityId) {
     if (!userId) return mockEvents;
     return mockEvents.filter(
         (e) =>
-            e.organizers.some((o: ParticipantDTO) => String(o.id) === String(userId)) ||
-            e.members.some((m: ParticipantDTO) => String(m.id) === String(userId)),
+            e.organizers.some((o: Participant) => String(o.id) === String(userId)) ||
+            e.members.some((m: Participant) => String(m.id) === String(userId)),
     );
 }
 
-function mapToEventSummary(e: EventDetailDTO | MockEvent): EventSummaryDTO {
+function mapToEventSummary(e: EventDetail | MockEvent): EventSummary {
     return {
         ...e,
         locationName: e.address?.locationName || 'N/A',
@@ -45,7 +45,7 @@ function mapToEventSummary(e: EventDetailDTO | MockEvent): EventSummaryDTO {
     };
 }
 
-function getFilteredMockTasks(mockTasks: TaskSummaryDTO[], userId?: EntityId) {
+function getFilteredMockTasks(mockTasks: TaskSummary[], userId?: EntityId) {
     if (!userId) return mockTasks;
     return mockTasks.filter((t) => String(t.assignedToId) === String(userId));
 }
@@ -54,7 +54,7 @@ function getMockEventById(mockEvents: MockEvent[], id: EntityId): MockEvent | nu
     return mockEvents.find((e) => String(e.id) === String(id)) || null;
 }
 
-function updateTaskInList(list: TaskSummaryDTO[], updatedTask: TaskSummaryDTO) {
+function updateTaskInList(list: TaskSummary[], updatedTask: TaskSummary) {
     const index = list.findIndex((t) => String(t.id) === String(updatedTask.id));
     if (index !== -1) {
         list[index] = { ...list[index], ...updatedTask };
@@ -64,8 +64,8 @@ function updateTaskInList(list: TaskSummaryDTO[], updatedTask: TaskSummaryDTO) {
 }
 
 function addParticipantToState(
-    target: { organizers?: ParticipantDTO[]; members?: ParticipantDTO[] },
-    participant: ParticipantDTO,
+    target: { organizers?: Participant[]; members?: Participant[] },
+    participant: Participant,
     role: ParticipantRole,
 ) {
     if (role === ParticipantRole.ORGANIZER) {
@@ -82,7 +82,7 @@ function addParticipantToState(
 }
 
 function removeParticipantFromState(
-    target: { organizers?: ParticipantDTO[]; members?: ParticipantDTO[] },
+    target: { organizers?: Participant[]; members?: Participant[] },
     userId: EntityId,
     role: ParticipantRole,
 ) {
@@ -94,9 +94,9 @@ function removeParticipantFromState(
 }
 
 function updateEventInList(
-    list: EventSummaryDTO[],
+    list: EventSummary[],
     id: EntityId,
-    updatedFields: Partial<EventSummaryDTO> & { id: EntityId; title: string; description: string; date: string },
+    updatedFields: Partial<EventSummary> & { id: EntityId; title: string; description: string; date: string },
 ) {
     const index = list.findIndex((e) => String(e.id) === String(id));
     if (index !== -1) {
@@ -115,13 +115,13 @@ function updateEventInList(
     return false;
 }
 
-function applyEventUpdates(target: EventSummaryDTO | MockEvent, updates: Partial<EventSummaryDTO>) {
+function applyEventUpdates(target: EventSummary | MockEvent, updates: Partial<EventSummary>) {
     if (updates.title) target.title = updates.title;
     if (updates.description) target.description = updates.description;
     if (updates.date) target.date = updates.date;
 }
 
-function applyAddressUpdates(target: MockEvent, updates: Partial<AddressDTO>) {
+function applyAddressUpdates(target: MockEvent, updates: Partial<Address>) {
     target.address ??= {};
     if (updates.locationName) target.address.locationName = updates.locationName;
     if (updates.street) target.address.street = updates.street;
@@ -130,7 +130,7 @@ function applyAddressUpdates(target: MockEvent, updates: Partial<AddressDTO>) {
     if (updates.country) target.address.country = updates.country;
 }
 
-async function hydrateTaskAssignment(task: TaskSummaryDTO, currentEvent: EventDetailDTO | null) {
+async function hydrateTaskAssignment(task: TaskSummary, currentEvent: EventDetail | null) {
     if (!task.assignedToId) {
         task.assignedToUsername = undefined;
         return;
@@ -147,34 +147,28 @@ async function hydrateTaskAssignment(task: TaskSummaryDTO, currentEvent: EventDe
         }
     }
 
-    // Fallback to adminStore users
-    const adminStore = (await import('./admin')).useAdminStore();
-    if (adminStore.users.length === 0) {
-        await adminStore.fetchUsers();
-    }
-    const user = adminStore.users.find((u) => String(u.id) === String(task.assignedToId));
+    // Fallback to userService users
+    const users = await userService.getAllUsers();
+    const user = users.find((u) => String(u.id) === String(task.assignedToId));
     if (user) {
         task.assignedToUsername = user.username;
     }
 }
 
-async function hydrateParticipantInfo(participant: ParticipantDTO, userId: EntityId) {
+async function hydrateParticipantInfo(participant: Participant, userId: EntityId) {
     if (participant.username && participant.avatar) return;
 
-    const adminStore = (await import('./admin')).useAdminStore();
-    if (adminStore.users.length === 0) {
-        await adminStore.fetchUsers();
-    }
-    const user = adminStore.users.find((u) => String(u.id) === String(userId));
+    const users = await userService.getAllUsers();
+    const user = users.find((u) => String(u.id) === String(userId));
     if (user) {
         participant.username = participant.username || user.username;
         participant.avatar = participant.avatar || user.avatar;
-        participant.email = participant.email || user.email;
+        participant.email = participant.email || user.email || '';
     }
 }
 
 function updateEventSummaryStats(
-    events: EventSummaryDTO[],
+    events: EventSummary[],
     mockEvents: MockEvent[],
     eventId: EntityId,
     taskDiff: number,
@@ -200,9 +194,9 @@ function updateEventSummaryStats(
 }
 
 export const useEventStore = defineStore('event', () => {
-    const events = ref<EventSummaryDTO[]>([]);
-    const tasks = ref<TaskSummaryDTO[]>([]);
-    const currentEvent = ref<EventDetailDTO | null>(null);
+    const events = ref<EventSummary[]>([]);
+    const tasks = ref<TaskSummary[]>([]);
+    const currentEvent = ref<EventDetail | null>(null);
     const loading = ref(false);
 
     const authStore = useAuthStore();
@@ -221,7 +215,7 @@ export const useEventStore = defineStore('event', () => {
     // Mock data storage for sessions without a backend
     const mockEvents = ref<MockEvent[]>(mockEventsData as MockEvent[]);
 
-    const mockTasks = ref<TaskSummaryDTO[]>(mockTasksData as TaskSummaryDTO[]);
+    const mockTasks = ref<TaskSummary[]>(mockTasksData as TaskSummary[]);
 
     // --- Actions ---
 
@@ -290,7 +284,7 @@ export const useEventStore = defineStore('event', () => {
         }
     }
 
-    async function addTask(eventId: EntityId, taskData: Omit<TaskSummaryDTO, 'id' | 'completed'>) {
+    async function addTask(eventId: EntityId, taskData: Omit<TaskSummary, 'id' | 'completed'>) {
         loading.value = true;
         try {
             const newTask = await taskService.createTask({ ...taskData, eventId });
@@ -299,7 +293,7 @@ export const useEventStore = defineStore('event', () => {
             return newTask;
         } catch (error) {
             console.error(error);
-            const newTask: TaskSummaryDTO = {
+            const newTask: TaskSummary = {
                 ...taskData,
                 id: crypto.randomUUID(),
                 completed: false,
@@ -341,6 +335,8 @@ export const useEventStore = defineStore('event', () => {
         loading.value = true;
         try {
             const participant = await eventService.addParticipant(eventId, userId, role);
+            // Ensure the participant ID is correctly set to the userId, in case the API returns the event or another object
+            participant.id = userId;
             await hydrateParticipantInfo(participant, userId);
 
             if (currentEvent.value && String(currentEvent.value.id) === String(eventId)) {
@@ -350,17 +346,14 @@ export const useEventStore = defineStore('event', () => {
         } catch (error) {
             console.error(error);
             // Mock fallback
-            const adminStore = (await import('./admin')).useAdminStore();
-            if (adminStore.users.length === 0) {
-                await adminStore.fetchUsers();
-            }
-            const user = adminStore.users.find((u) => String(u.id) === String(userId));
+            const users = await userService.getAllUsers();
+            const user = users.find((u) => String(u.id) === String(userId));
             if (user) {
-                const participant: ParticipantDTO = {
+                const participant: Participant = {
                     id: user.id,
                     username: user.username,
                     avatar: user.avatar,
-                    email: user.email,
+                    email: user.email || '',
                     role: role,
                 };
 
@@ -405,7 +398,7 @@ export const useEventStore = defineStore('event', () => {
         }
     }
 
-    async function updateTask(taskId: EntityId, taskData: Partial<TaskSummaryDTO>) {
+    async function updateTask(taskId: EntityId, taskData: Partial<TaskSummary>) {
         loading.value = true;
         try {
             const updatedTask = await taskService.updateTask(taskId, taskData);
@@ -430,21 +423,44 @@ export const useEventStore = defineStore('event', () => {
     async function assignTask(taskId: EntityId, userId: EntityId | undefined) {
         loading.value = true;
         try {
-            await taskService.assignTask(taskId, userId);
+            const task =
+                tasks.value.find((t) => String(t.id) === String(taskId)) ||
+                currentEvent.value?.tasks?.find((t) => String(t.id) === String(taskId));
+
+            if (!task) {
+                throw new Error('Task not found');
+            }
+
+            const updatedTask = await taskService.assignTask(taskId, userId, task.description);
+            await syncTaskInState(updatedTask);
+        } catch (error) {
+            console.error('Failed to assign task:', error);
+            // Fallback for mock data or if API returns error
             const task =
                 tasks.value.find((t) => String(t.id) === String(taskId)) ||
                 currentEvent.value?.tasks?.find((t) => String(t.id) === String(taskId));
             if (task) {
                 task.assignedToId = userId;
-                // assignedToUsername will be hydrated inside syncTaskInState
                 await syncTaskInState(task);
+            } else {
+                throw error;
             }
         } finally {
             loading.value = false;
         }
     }
 
-    async function syncTaskInState(updatedTask: TaskSummaryDTO) {
+    async function syncTaskInState(updatedTask: TaskSummary) {
+        // API might return TaskDetail (with assignedTo object) instead of TaskSummary (with assignedToId).
+        // Normalize to ensure frontend logic based on assignedToId works correctly.
+        const task = updatedTask as TaskSummary & { assignedTo?: Participant };
+        if (task.assignedTo && !task.assignedToId) {
+            task.assignedToId = task.assignedTo.id;
+        }
+        if (task.assignedTo && !task.assignedToUsername) {
+            task.assignedToUsername = task.assignedTo.username;
+        }
+
         await hydrateTaskAssignment(updatedTask, currentEvent.value);
 
         // Update in global tasks list
@@ -467,15 +483,35 @@ export const useEventStore = defineStore('event', () => {
     }
 
     async function createEvent(
-        eventData: Omit<EventSummaryDTO, 'id' | 'organizers' | 'members' | 'tasks'> & {
+        eventData: Omit<EventSummary, 'id' | 'organizers' | 'members' | 'tasks'> & {
             locationName?: string;
-            address?: Partial<AddressDTO>;
+            address?: Partial<Address>;
         },
     ) {
         loading.value = true;
         try {
             const newEvent = await eventService.createEvent(eventData);
-            events.value.push(newEvent);
+
+            // Automatically add the creator as an organizer if they aren't already included
+            if (authStore.user && authStore.user.id) {
+                const isAlreadyOrganizer = newEvent.organizers?.some(
+                    (o) => String(o.id) === String(authStore.user?.id),
+                );
+
+                if (!isAlreadyOrganizer) {
+                    try {
+                        await addParticipant(newEvent.id, authStore.user.id, ParticipantRole.ORGANIZER);
+                        // Refresh the local event data to include the new participant
+                        const updatedEvent = await eventService.getEventById(newEvent.id);
+                        newEvent.organizers = updatedEvent.organizers;
+                        newEvent.participantCount = updatedEvent.participantCount;
+                    } catch (participantError) {
+                        console.error('Failed to automatically add creator as organizer:', participantError);
+                    }
+                }
+            }
+
+            events.value.push(mapToEventSummary(newEvent));
             return newEvent;
         } catch (error) {
             console.error(error);
@@ -487,10 +523,10 @@ export const useEventStore = defineStore('event', () => {
                 address: {
                     id: crypto.randomUUID(),
                     locationName: eventData.locationName,
-                    street: (eventData.address as AddressDTO)?.street,
-                    city: (eventData.address as AddressDTO)?.city,
-                    zipCode: (eventData.address as AddressDTO)?.zipCode,
-                    country: (eventData.address as AddressDTO)?.country,
+                    street: (eventData.address as Address)?.street,
+                    city: (eventData.address as Address)?.city,
+                    zipCode: (eventData.address as Address)?.zipCode,
+                    country: (eventData.address as Address)?.country,
                 },
                 organizers: [{ ...authStore.user!, role: ParticipantRole.ORGANIZER }],
                 members: [],
@@ -510,7 +546,7 @@ export const useEventStore = defineStore('event', () => {
 
     async function updateEvent(
         id: EntityId,
-        eventData: Partial<EventDetailDTO> & { id: EntityId; locationName?: string },
+        eventData: Partial<EventDetail> & { id: EntityId; locationName?: string },
     ) {
         loading.value = true;
         try {

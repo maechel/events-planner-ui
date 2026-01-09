@@ -5,7 +5,7 @@ import PrimeVue from 'primevue/config';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import { createPinia } from 'pinia';
-import type { EventSummaryDTO } from '@/types/events';
+import type { EventSummary } from '@/types/events';
 import { ParticipantRole } from '@/constants/roles';
 
 // Mock FontAwesomeIcon
@@ -14,7 +14,7 @@ const FontAwesomeIconMock = {
 };
 
 describe('EventCard.vue', () => {
-    const mockEvent: EventSummaryDTO = {
+    const mockEvent: EventSummary = {
         id: '1',
         title: 'Test Event',
         description: 'This is a test event description',
@@ -66,7 +66,7 @@ describe('EventCard.vue', () => {
     });
 
     it('calculates counts from arrays when explicit counts are missing', () => {
-        const eventWithoutCounts: EventSummaryDTO = {
+        const eventWithoutCounts: EventSummary = {
             ...mockEvent,
             participantCount: undefined as unknown as number,
             taskCount: undefined as unknown as number,

@@ -36,7 +36,7 @@ const emit = defineEmits<EmitTypes>();
                 size="small"
                 text
                 rounded
-                @click="emit('add')"
+                @click.stop="emit('add')"
                 class="w-10 h-10"
             />
         </div>

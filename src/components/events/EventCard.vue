@@ -4,11 +4,11 @@ import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import Card from 'primevue/card';
 import { format, parseISO } from 'date-fns';
 import { computed } from 'vue';
-import type { EventSummaryDTO } from '@/types/events';
+import type { EventSummary } from '@/types/events';
 import type { EntityId } from '@/types/common';
 
 type PropTypes = {
-    event: EventSummaryDTO;
+    event: EventSummary;
     isPassed?: boolean;
 };
 

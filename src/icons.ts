@@ -54,6 +54,7 @@ import {
     faClockRotateLeft,
     faQuestion,
     faCircleNotch,
+    faArrowRight,
 } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
@@ -110,4 +111,5 @@ library.add(
     faClockRotateLeft,
     faQuestion,
     faCircleNotch,
+    faArrowRight,
 );

@@ -19,7 +19,6 @@ export const API_ENDPOINTS = {
         BASE: '/tasks',
         BY_ID: (id: EntityId) => `/tasks/${id}`,
         TOGGLE: (id: EntityId) => `/tasks/${id}/toggle`,
-        ASSIGN: (id: EntityId) => `/tasks/${id}/assign`,
     },
     ADMIN: {
         STATS: '/admin/stats',

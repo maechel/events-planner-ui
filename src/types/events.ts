@@ -1,8 +1,8 @@
-import type { ParticipantDTO } from './users';
-import type { TaskSummaryDTO } from './tasks';
+import type { Participant } from './users';
+import type { TaskSummary } from './tasks';
 import type { EntityId } from './common';
 
-export interface AddressDTO {
+export interface Address {
     id?: EntityId;
     street?: string;
     city?: string;
@@ -11,7 +11,7 @@ export interface AddressDTO {
     locationName?: string;
 }
 
-export interface EventSummaryDTO {
+export interface EventSummary {
     id: EntityId;
     title: string;
     description: string;
@@ -21,16 +21,16 @@ export interface EventSummaryDTO {
     taskCount: number;
     hasUnfinishedTasks: boolean;
     completedTaskCount?: number;
-    organizers?: ParticipantDTO[];
-    members?: ParticipantDTO[];
-    tasks?: TaskSummaryDTO[];
+    organizers?: Participant[];
+    members?: Participant[];
+    tasks?: TaskSummary[];
 }
 
-export interface EventDetailDTO extends Omit<EventSummaryDTO, 'locationName'> {
-    address?: AddressDTO;
-    organizers: ParticipantDTO[];
-    members: ParticipantDTO[];
-    tasks: TaskSummaryDTO[];
+export interface EventDetail extends Omit<EventSummary, 'locationName'> {
+    address?: Address;
+    organizers: Participant[];
+    members: Participant[];
+    tasks: TaskSummary[];
     createdAt?: string;
     updatedAt?: string;
 }

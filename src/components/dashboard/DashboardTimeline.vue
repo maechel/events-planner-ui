@@ -4,10 +4,10 @@ import { useRouter } from 'vue-router';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import Timeline from 'primevue/timeline';
 import { format, parseISO } from 'date-fns';
-import type { EventSummaryDTO } from '@/types/events';
+import type { EventSummary } from '@/types/events';
 
 type PropTypes = {
-    eventsInComingYear: EventSummaryDTO[];
+    eventsInComingYear: EventSummary[];
 };
 
 defineProps<PropTypes>();

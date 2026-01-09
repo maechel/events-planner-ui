@@ -1,16 +1,12 @@
 import { computed, type Ref } from 'vue';
 import { addDays, isAfter, isBefore, parseISO, format, startOfDay } from 'date-fns';
-import type { EventSummaryDTO } from '@/types/events';
-import type { TaskSummaryDTO } from '@/types/tasks';
-import type { UserDetailDTO } from '@/types/users';
+import type { EventSummary } from '@/types/events';
+import type { TaskSummary } from '@/types/tasks';
+import type { UserDetail } from '@/types/users';
 import type { EntityId } from '@/types/common';
 import { getUrgencySeverity } from '@/utils/formatters';
 
-export function useEventLogic(
-    events: Ref<EventSummaryDTO[]>,
-    tasks: Ref<TaskSummaryDTO[]>,
-    user: Ref<UserDetailDTO | null>,
-) {
+export function useEventLogic(events: Ref<EventSummary[]>, tasks: Ref<TaskSummary[]>, user: Ref<UserDetail | null>) {
     const upcomingEvents = computed(() => {
         const today = startOfDay(new Date());
         return events.value
@@ -50,7 +46,7 @@ export function useEventLogic(
         const now = new Date();
         const nextWeek = addDays(now, 7);
 
-        const nearingTasks: { eventTitle: string; eventId: EntityId; task: TaskSummaryDTO }[] = [];
+        const nearingTasks: { eventTitle: string; eventId: EntityId; task: TaskSummary }[] = [];
 
         tasks.value.forEach((t) => {
             if (!t.completed && t.dueDate) {

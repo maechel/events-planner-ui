@@ -122,13 +122,13 @@ const onLogin = async () => {
         console.log('User profile loaded:', authStore.user);
 
         console.log('Closing modal and showing toast...');
-        isVisible.value = false;
         toast.add({
             severity: ToastSeverity.SUCCESS,
             summary: 'Success',
             detail: 'Logged in successfully',
             life: 3000,
         });
+        isVisible.value = false;
     } catch (error) {
         console.error('Detailed Login Error:', error);
         const axiosError = error as AxiosError<{ message: string }>;

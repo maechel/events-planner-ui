@@ -1,13 +1,14 @@
 import { ParticipantRole } from '@/constants/roles';
 import type { EntityId } from './common';
 
-export interface UserSummaryDTO {
+export interface UserSummary {
     id: EntityId;
     username: string;
     avatar?: string;
+    email?: string;
 }
 
-export interface UserDetailDTO {
+export interface UserDetail {
     id: EntityId;
     username: string;
     email: string;
@@ -24,7 +25,7 @@ export interface UserDetailDTO {
     password?: string;
 }
 
-export interface ParticipantDTO extends UserSummaryDTO {
+export interface Participant extends UserSummary {
     email: string;
     role: ParticipantRole;
 }

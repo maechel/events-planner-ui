@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { EventSummaryDTO } from '@/types/events';
+import type { EventSummary } from '@/types/events';
 import type { EntityId } from '@/types/common';
 import EventCard from './EventCard.vue';
 
 type PropTypes = {
     title: string;
-    events: EventSummaryDTO[];
+    events: EventSummary[];
     isPassed?: boolean;
 };
 

@@ -3,10 +3,10 @@ import { DATE_FORMATS } from '@/constants/ui';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import Button from 'primevue/button';
 import { format, parseISO } from 'date-fns';
-import type { EventDetailDTO } from '@/types/events';
+import type { EventDetail } from '@/types/events';
 
 type PropTypes = {
-    event: EventDetailDTO;
+    event: EventDetail;
 };
 
 type EmitTypes = {
@@ -61,7 +61,7 @@ const formatDate = (dateString: string) => {
                 <Button
                     variant="outlined"
                     size="large"
-                    @click="emit('edit')"
+                    @click.stop="emit('edit')"
                     class="px-6 py-4 font-black"
                 >
                     <FontAwesomeIcon icon="fa-solid fa-pen-to-square" />
@@ -71,7 +71,7 @@ const formatDate = (dateString: string) => {
                     severity="danger"
                     variant="outlined"
                     size="large"
-                    @click="emit('delete')"
+                    @click.stop="emit('delete')"
                     class="px-6 py-4 font-black"
                 >
                     <FontAwesomeIcon icon="fa-solid fa-trash" />
@@ -79,7 +79,7 @@ const formatDate = (dateString: string) => {
                 </Button>
                 <Button
                     size="large"
-                    @click="emit('invite')"
+                    @click.stop="emit('invite')"
                     class="shadow-xl shadow-primary/20 px-8 py-4 font-black"
                 >
                     <FontAwesomeIcon icon="fa-solid fa-user-plus" />

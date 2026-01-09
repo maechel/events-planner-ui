@@ -1,27 +1,27 @@
 import api from '@/api/axios';
 import { API_ENDPOINTS } from '@/constants/api';
-import type { UserDetailDTO } from '@/types/users';
+import type { UserDetail } from '@/types/users';
 import type { HealthResponse, MetricResponse } from '@/stores/admin';
 import type { EntityId } from '@/types/common';
 
 export const adminService = {
-    async getUsers(): Promise<UserDetailDTO[]> {
-        const response = await api.get<UserDetailDTO[]>(API_ENDPOINTS.ADMIN.USERS);
+    async getUsers(): Promise<UserDetail[]> {
+        const response = await api.get<UserDetail[]>(API_ENDPOINTS.ADMIN.USERS);
         return response.data;
     },
 
-    async getUserById(id: EntityId): Promise<UserDetailDTO> {
-        const response = await api.get<UserDetailDTO>(API_ENDPOINTS.ADMIN.USER_BY_ID(id));
+    async getUserById(id: EntityId): Promise<UserDetail> {
+        const response = await api.get<UserDetail>(API_ENDPOINTS.ADMIN.USER_BY_ID(id));
         return response.data;
     },
 
-    async createUser(userData: Partial<UserDetailDTO>): Promise<UserDetailDTO> {
-        const response = await api.post<UserDetailDTO>(API_ENDPOINTS.ADMIN.USERS, userData);
+    async createUser(userData: Partial<UserDetail>): Promise<UserDetail> {
+        const response = await api.post<UserDetail>(API_ENDPOINTS.ADMIN.USERS, userData);
         return response.data;
     },
 
-    async updateUser(id: EntityId, userData: Partial<UserDetailDTO>): Promise<UserDetailDTO> {
-        const response = await api.put<UserDetailDTO>(API_ENDPOINTS.ADMIN.USER_BY_ID(id), userData);
+    async updateUser(id: EntityId, userData: Partial<UserDetail>): Promise<UserDetail> {
+        const response = await api.put<UserDetail>(API_ENDPOINTS.ADMIN.USER_BY_ID(id), userData);
         return response.data;
     },
 

@@ -1,15 +1,15 @@
 import api from '@/api/axios';
 import { API_ENDPOINTS } from '@/constants/api';
-import type { UserDetailDTO, UserSummaryDTO } from '@/types/users';
+import type { UserDetail, UserSummary } from '@/types/users';
 
 export const userService = {
-    async getCurrentUser(): Promise<UserDetailDTO> {
-        const response = await api.get<UserDetailDTO>(API_ENDPOINTS.AUTH.ME);
+    async getCurrentUser(): Promise<UserDetail> {
+        const response = await api.get<UserDetail>(API_ENDPOINTS.AUTH.ME);
         return response.data;
     },
 
-    async getAllUsers(): Promise<UserSummaryDTO[]> {
-        const response = await api.get<UserSummaryDTO[]>(API_ENDPOINTS.USERS);
+    async getAllUsers(): Promise<UserSummary[]> {
+        const response = await api.get<UserSummary[]>(API_ENDPOINTS.USERS);
         return response.data;
     },
 
@@ -18,8 +18,8 @@ export const userService = {
         return response.data;
     },
 
-    async register(userData: Record<string, string>): Promise<UserDetailDTO> {
-        const response = await api.post<UserDetailDTO>(API_ENDPOINTS.AUTH.REGISTER, userData);
+    async register(userData: Record<string, string>): Promise<UserDetail> {
+        const response = await api.post<UserDetail>(API_ENDPOINTS.AUTH.REGISTER, userData);
         return response.data;
     },
 

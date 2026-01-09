@@ -2,62 +2,61 @@
 import { onMounted, ref } from 'vue';
 import { storeToRefs } from 'pinia';
 import { useAdminStore } from '@/stores/admin';
-import { useUserForm } from '@/composables/useUserForm';
+import UserForm from '@/components/forms/UserForm.vue';
 import Button from 'primevue/button';
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Tag from 'primevue/tag';
 import Avatar from 'primevue/avatar';
 import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import MultiSelect from 'primevue/multiselect';
-import Checkbox from 'primevue/checkbox';
-import ToggleSwitch from 'primevue/toggleswitch';
-import ToggleButton from 'primevue/togglebutton';
-import Password from 'primevue/password';
-import IconField from 'primevue/iconfield';
-import InputIcon from 'primevue/inputicon';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
 import { useToast } from 'primevue/usetoast';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { DATE_FORMATS } from '@/constants/ui';
 import type { User } from '@/stores/auth';
+import type { UserDetail } from '@/types/users';
 
 const adminStore = useAdminStore();
 const { users, loading } = storeToRefs(adminStore);
 const toast = useToast();
 
-const {
-    userDialog,
-    deleteUserDialog,
-    selectedUserId,
-    username,
-    email,
-    password,
-    confirmPassword,
-    authorities,
-    enabled,
-    accountNonLocked,
-    errors,
-    meta,
-    openNew,
-    editUser,
-    saveUser,
-    confirmDeleteUser,
-    deleteUser,
-    hideDialog,
-} = useUserForm(adminStore);
-
-const roles = ref([
-    { label: 'Admin', value: 'ROLE_ADMIN' },
-    { label: 'User', value: 'ROLE_USER' },
-]);
-
+const userDialog = ref(false);
+const deleteUserDialog = ref(false);
+const selectedUser = ref<UserDetail | null>(null);
 const editingRows = ref([]);
 
 onMounted(() => {
     adminStore.fetchUsers();
 });
+
+const openNew = () => {
+    selectedUser.value = null;
+    userDialog.value = true;
+};
+
+const editUser = (user: UserDetail) => {
+    selectedUser.value = user;
+    userDialog.value = true;
+};
+
+const confirmDeleteUser = (user: UserDetail) => {
+    selectedUser.value = user;
+    deleteUserDialog.value = true;
+};
+
+const deleteUser = async () => {
+    if (selectedUser.value) {
+        try {
+            await adminStore.deleteUser(selectedUser.value.id);
+            deleteUserDialog.value = false;
+            selectedUser.value = null;
+            toast.add({ severity: 'success', summary: 'Successful', detail: 'User Deleted', life: 3000 });
+        } catch (error) {
+            console.error('Failed to delete user:', error);
+            toast.add({ severity: 'error', summary: 'Error', detail: 'Failed to delete user', life: 3000 });
+        }
+    }
+};
 
 const onRowEditSave = async (event: { newData: User; index: number }) => {
     const { newData, index } = event;
@@ -122,7 +121,7 @@ const getUserAuthorities = (user: User) => {
                 <Button
                     severity="success"
                     size="large"
-                    @click="openNew"
+                    @click.stop="openNew"
                     class="shadow-xl shadow-green-500/20 px-8 py-4 font-black"
                 >
                     <FontAwesomeIcon icon="fa-solid fa-plus" />
@@ -328,7 +327,7 @@ const getUserAuthorities = (user: User) => {
                                     variant="text"
                                     rounded
                                     size="large"
-                                    @click="editUser(slotProps.data)"
+                                    @click.stop="editUser(slotProps.data)"
                                     v-tooltip.top="'Full Edit'"
                                 >
                                     <FontAwesomeIcon icon="fa-solid fa-pencil" />
@@ -338,7 +337,7 @@ const getUserAuthorities = (user: User) => {
                                     rounded
                                     severity="danger"
                                     size="large"
-                                    @click="confirmDeleteUser(slotProps.data)"
+                                    @click.stop="confirmDeleteUser(slotProps.data)"
                                     v-tooltip.top="'Delete'"
                                 >
                                     <FontAwesomeIcon icon="fa-solid fa-trash" />
@@ -351,219 +350,10 @@ const getUserAuthorities = (user: User) => {
         </div>
 
         <!-- User Form Dialog -->
-        <Dialog
+        <UserForm
             v-model:visible="userDialog"
-            :style="{ width: '450px' }"
-            :header="selectedUserId ? 'Edit User' : 'New User'"
-            :modal="true"
-            class="p-fluid"
-        >
-            <div class="flex flex-col gap-2 mt-4">
-                <div class="flex flex-col gap-1 min-h-[5.5rem]">
-                    <label
-                        for="username"
-                        class="font-semibold text-sm text-surface-600 dark:text-surface-400"
-                        >Username</label
-                    >
-                    <IconField>
-                        <InputIcon>
-                            <FontAwesomeIcon icon="fa-solid fa-user" />
-                        </InputIcon>
-                        <InputText
-                            id="username"
-                            v-model="username"
-                            autofocus
-                            :invalid="!!errors.username"
-                            class="w-full h-11"
-                            placeholder="Enter username"
-                        />
-                    </IconField>
-                    <div class="h-5">
-                        <Message
-                            v-if="errors.username"
-                            severity="error"
-                            size="small"
-                            variant="simple"
-                            >{{ errors.username }}</Message
-                        >
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-1 min-h-[5.5rem]">
-                    <label
-                        for="email"
-                        class="font-semibold text-sm text-surface-600 dark:text-surface-400"
-                        >Email</label
-                    >
-                    <IconField>
-                        <InputIcon>
-                            <FontAwesomeIcon icon="fa-solid fa-envelope" />
-                        </InputIcon>
-                        <InputText
-                            id="email"
-                            v-model="email"
-                            :invalid="!!errors.email"
-                            class="w-full h-11"
-                            placeholder="Enter email"
-                        />
-                    </IconField>
-                    <div class="h-5">
-                        <Message
-                            v-if="errors.email"
-                            severity="error"
-                            size="small"
-                            variant="simple"
-                            >{{ errors.email }}</Message
-                        >
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-1 min-h-[5.5rem]">
-                    <label
-                        for="password"
-                        class="font-semibold text-sm text-surface-600 dark:text-surface-400"
-                        >{{ selectedUserId ? 'New Password (optional)' : 'Password' }}</label
-                    >
-                    <IconField>
-                        <InputIcon>
-                            <FontAwesomeIcon icon="fa-solid fa-lock" />
-                        </InputIcon>
-                        <Password
-                            id="password"
-                            v-model="password"
-                            :feedback="false"
-                            toggleMask
-                            :invalid="!!errors.password"
-                            class="w-full"
-                            :dt="{
-                                pcInputText: {
-                                    root: 'w-full h-11',
-                                },
-                            }"
-                            input-class="w-full"
-                            placeholder="Enter password"
-                        />
-                    </IconField>
-                    <div class="h-5">
-                        <Message
-                            v-if="errors.password"
-                            severity="error"
-                            size="small"
-                            variant="simple"
-                            >{{ errors.password }}</Message
-                        >
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-1 min-h-[5.5rem]">
-                    <label
-                        for="confirmPassword"
-                        class="font-semibold text-sm text-surface-600 dark:text-surface-400"
-                        >Confirm Password</label
-                    >
-                    <IconField>
-                        <InputIcon>
-                            <FontAwesomeIcon icon="fa-solid fa-check-double" />
-                        </InputIcon>
-                        <Password
-                            id="confirmPassword"
-                            v-model="confirmPassword"
-                            :feedback="false"
-                            toggleMask
-                            :invalid="!!errors.confirmPassword"
-                            class="w-full"
-                            :dt="{
-                                pcInputText: {
-                                    root: 'w-full h-11',
-                                },
-                            }"
-                            input-class="w-full"
-                            placeholder="Confirm password"
-                        />
-                    </IconField>
-                    <div class="h-5">
-                        <Message
-                            v-if="errors.confirmPassword"
-                            severity="error"
-                            size="small"
-                            variant="simple"
-                            >{{ errors.confirmPassword }}</Message
-                        >
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-1 min-h-[5.5rem]">
-                    <label
-                        for="authorities"
-                        class="font-semibold text-sm text-surface-600 dark:text-surface-400"
-                        >Authorities</label
-                    >
-                    <MultiSelect
-                        id="authorities"
-                        v-model="authorities"
-                        :options="roles"
-                        optionLabel="label"
-                        optionValue="value"
-                        placeholder="Select Authorities"
-                        display="chip"
-                        class="w-full"
-                        :invalid="!!errors.authorities"
-                    />
-                    <div class="h-5">
-                        <Message
-                            v-if="errors.authorities"
-                            severity="error"
-                            size="small"
-                            variant="simple"
-                            >{{ errors.authorities }}</Message
-                        >
-                    </div>
-                </div>
-
-                <div class="flex flex-col gap-3 mt-2">
-                    <div class="flex items-center gap-2">
-                        <Checkbox
-                            id="enabled"
-                            v-model="enabled"
-                            :binary="true"
-                        />
-                        <label
-                            for="enabled"
-                            class="font-bold"
-                            >Account Enabled</label
-                        >
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <Checkbox
-                            id="accountNonLocked"
-                            v-model="accountNonLocked"
-                            :binary="true"
-                        />
-                        <label
-                            for="accountNonLocked"
-                            class="font-bold"
-                            >Account Unlocked</label
-                        >
-                    </div>
-                </div>
-            </div>
-            <template #footer>
-                <Button
-                    variant="text"
-                    @click="hideDialog"
-                >
-                    <FontAwesomeIcon icon="fa-solid fa-times" />
-                    <span>Cancel</span>
-                </Button>
-                <Button
-                    @click="saveUser"
-                    :disabled="!meta.valid"
-                >
-                    <FontAwesomeIcon icon="fa-solid fa-check" />
-                    <span>Save</span>
-                </Button>
-            </template>
-        </Dialog>
+            :initialData="selectedUser"
+        />
 
         <!-- Delete User Confirmation Dialog -->
         <Dialog
@@ -571,13 +361,14 @@ const getUserAuthorities = (user: User) => {
             :style="{ width: '450px' }"
             header="Confirm"
             :modal="true"
+            @hide="selectedUser = null"
         >
             <div class="flex items-center gap-3 mt-4">
                 <FontAwesomeIcon
                     icon="fa-solid fa-triangle-exclamation"
                     class="text-3xl text-yellow-500"
                 />
-                <span v-if="selectedUserId">Are you sure you want to delete this user?</span>
+                <span v-if="selectedUser">Are you sure you want to delete this user?</span>
             </div>
             <template #footer>
                 <Button

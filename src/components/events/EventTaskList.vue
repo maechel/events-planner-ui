@@ -83,7 +83,7 @@ const getUrgencyIcon = (dueDate: string) => {
             <Button
                 size="small"
                 rounded
-                @click="emit('add-task')"
+                @click.stop="emit('add-task')"
                 class="font-black px-4"
             >
                 <FontAwesomeIcon icon="fa-solid fa-plus" />
@@ -177,8 +177,8 @@ const getUrgencyIcon = (dueDate: string) => {
                         <Button
                             variant="text"
                             rounded
-                            class="sm:opacity-0 group-hover:opacity-100 transition-opacity"
-                            @click="emit('edit-task', task)"
+                            class="transition-opacity"
+                            @click.stop="emit('edit-task', task)"
                         >
                             <FontAwesomeIcon icon="fa-solid fa-pencil" />
                         </Button>
@@ -186,8 +186,8 @@ const getUrgencyIcon = (dueDate: string) => {
                             variant="text"
                             severity="danger"
                             rounded
-                            class="sm:opacity-0 group-hover:opacity-100 transition-opacity"
-                            @click="emit('delete-task', task.id)"
+                            class="transition-opacity"
+                            @click.stop="emit('delete-task', task.id)"
                         >
                             <FontAwesomeIcon icon="fa-solid fa-trash" />
                         </Button>

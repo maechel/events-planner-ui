@@ -2,11 +2,11 @@ import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
 import api from '@/api/axios';
 import { useStorage } from '@vueuse/core';
-import type { UserDetailDTO } from '@/types/users';
+import type { UserDetail } from '@/types/users';
 import type { AxiosError } from 'axios';
 import { userService } from '@/services/userService';
 
-export type User = UserDetailDTO & { role?: string };
+export type User = UserDetail & { role?: string };
 
 export const useAuthStore = defineStore('auth', () => {
     const user = useStorage<User | null>('user', null);
@@ -29,8 +29,8 @@ export const useAuthStore = defineStore('auth', () => {
         api.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
     }
 
-    const isAuthenticated = computed(() => !!token.value || !!user.value);
-    const isUserLoaded = computed(() => !!user.value);
+    const isAuthenticated = computed(() => !!token.value || (!!user.value && user.value.authenticated !== false));
+    const isUserLoaded = computed(() => !!user.value && user.value.authenticated !== false);
     const isAdmin = computed(() => {
         if (!user.value) return false;
 
@@ -48,8 +48,14 @@ export const useAuthStore = defineStore('auth', () => {
         loading.value = true;
         try {
             const userData = await userService.getCurrentUser();
-            user.value = userData;
 
+            if (userData.authenticated === false) {
+                user.value = null;
+                token.value = null;
+                return null;
+            }
+
+            user.value = userData;
             return userData;
         } catch (error) {
             const axiosError = error as AxiosError<{ message: string }>;

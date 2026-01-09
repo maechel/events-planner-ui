@@ -4,7 +4,6 @@ import { ToastSeverity } from '@/constants/ui';
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import Dialog from 'primevue/dialog';
 import Skeleton from 'primevue/skeleton';
 import Button from 'primevue/button';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
@@ -12,13 +11,14 @@ import { useEventStore } from '@/stores/event';
 import EventForm from '@/components/forms/EventForm.vue';
 import TaskForm from '@/components/forms/TaskForm.vue';
 import ParticipantForm from '@/components/forms/ParticipantForm.vue';
+import ReassignTasksForm from '@/components/forms/ReassignTasksForm.vue';
 import EventHeader from '@/components/events/EventHeader.vue';
 import EventInfo from '@/components/events/EventInfo.vue';
 import EventTaskList from '@/components/events/EventTaskList.vue';
 import EventTeam from '@/components/events/EventTeam.vue';
 import { useToast } from 'primevue/usetoast';
 import { useConfirm } from 'primevue/useconfirm';
-import type { TaskSummaryDTO } from '@/types/tasks';
+import type { TaskSummary } from '@/types/tasks';
 import type { EntityId } from '@/types/common';
 
 const route = useRoute();
@@ -32,7 +32,9 @@ const showEditEventDialog = ref(false);
 const showAddTaskDialog = ref(false);
 const showEditTaskDialog = ref(false);
 const showParticipantDialog = ref(false);
-const selectedTask = ref<TaskSummaryDTO | null>(null);
+const showReassignTasksDialog = ref(false);
+const selectedTask = ref<TaskSummary | null>(null);
+const participantToRemove = ref<{ id: EntityId; username: string; role: ParticipantRole } | null>(null);
 
 const allParticipants = computed(() => {
     if (!currentEvent.value) return [];
@@ -60,7 +62,7 @@ const handleToggleTask = async (taskId: EntityId, completed: boolean) => {
     }
 };
 
-const openEditTask = (task: TaskSummaryDTO) => {
+const openEditTask = (task: TaskSummary) => {
     selectedTask.value = task;
     showEditTaskDialog.value = true;
 };
@@ -139,6 +141,19 @@ const confirmDeleteEvent = () => {
 };
 
 const removeParticipant = (userId: EntityId, role: ParticipantRole) => {
+    const user = allParticipants.value.find((p) => String(p.id) === String(userId));
+    const userTasks = (currentEvent.value?.tasks || []).filter((t) => String(t.assignedToId) === String(userId));
+
+    if (userTasks.length > 0) {
+        participantToRemove.value = {
+            id: userId,
+            username: user?.username || 'Unknown',
+            role,
+        };
+        showReassignTasksDialog.value = true;
+        return;
+    }
+
     confirm.require({
         message: `Remove this ${role.toLowerCase()} from the event?`,
         header: 'Confirm Removal',
@@ -153,25 +168,41 @@ const removeParticipant = (userId: EntityId, role: ParticipantRole) => {
             severity: 'danger',
         },
         accept: async () => {
-            try {
-                await eventStore.removeParticipant(currentEvent.value!.id, userId, role);
-                toast.add({
-                    severity: ToastSeverity.INFO,
-                    summary: 'Removed',
-                    detail: 'Participant removed',
-                    life: 3000,
-                });
-            } catch (error) {
-                console.error('Failed to remove participant:', error);
-                toast.add({
-                    severity: ToastSeverity.ERROR,
-                    summary: 'Error',
-                    detail: 'Failed to remove participant',
-                    life: 3000,
-                });
-            }
+            await executeParticipantRemoval(userId, role);
         },
     });
+};
+
+const executeParticipantRemoval = async (userId: EntityId, role: ParticipantRole) => {
+    try {
+        await eventStore.removeParticipant(currentEvent.value!.id, userId, role);
+        toast.add({
+            severity: ToastSeverity.INFO,
+            summary: 'Removed',
+            detail: 'Participant removed',
+            life: 3000,
+        });
+    } catch (error) {
+        console.error('Failed to remove participant:', error);
+        toast.add({
+            severity: ToastSeverity.ERROR,
+            summary: 'Error',
+            detail: 'Failed to remove participant',
+            life: 3000,
+        });
+    }
+};
+
+const handleReassignSuccess = async () => {
+    // Capture the participant info before closing the dialog,
+    // as resetting showReassignTasksDialog might lead to participantToRemove being null
+    const participant = participantToRemove.value;
+    if (participant) {
+        const { id, role } = participant;
+        showReassignTasksDialog.value = false;
+        await executeParticipantRemoval(id, role);
+        participantToRemove.value = null;
+    }
 };
 
 const goBack = () => {
@@ -316,67 +347,42 @@ const goBack = () => {
         class="max-w-[1600px] mx-auto p-6 sm:p-10 animate-fade-in"
     >
         <!-- Dialogs -->
-        <Dialog
+        <EventForm
             v-model:visible="showEditEventDialog"
-            modal
-            header="Edit Event"
-            :style="{ width: '45rem' }"
-            :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-        >
-            <EventForm
-                :initialData="currentEvent"
-                isEdit
-                @success="showEditEventDialog = false"
-                @cancel="showEditEventDialog = false"
-            />
-        </Dialog>
+            :initialData="currentEvent"
+            isEdit
+        />
 
-        <Dialog
+        <TaskForm
             v-model:visible="showAddTaskDialog"
-            modal
-            header="Add New Task"
-            :style="{ width: '35rem' }"
-            :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-        >
-            <TaskForm
-                :eventId="currentEvent.id"
-                :participants="allParticipants"
-                @success="showAddTaskDialog = false"
-                @cancel="showAddTaskDialog = false"
-            />
-        </Dialog>
+            :eventId="currentEvent.id"
+            :participants="allParticipants"
+        />
 
-        <Dialog
+        <TaskForm
+            v-if="selectedTask"
             v-model:visible="showEditTaskDialog"
-            modal
-            header="Edit Task"
-            :style="{ width: '35rem' }"
-            :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-        >
-            <TaskForm
-                v-if="selectedTask"
-                :eventId="currentEvent.id"
-                :initialData="selectedTask"
-                :participants="allParticipants"
-                isEdit
-                @success="showEditTaskDialog = false"
-                @cancel="showEditTaskDialog = false"
-            />
-        </Dialog>
+            :eventId="currentEvent.id"
+            :initialData="selectedTask"
+            :participants="allParticipants"
+            isEdit
+        />
 
-        <Dialog
+        <ParticipantForm
             v-model:visible="showParticipantDialog"
-            modal
-            header="Add Participant"
-            :style="{ width: '35rem' }"
-            :breakpoints="{ '1199px': '75vw', '575px': '90vw' }"
-        >
-            <ParticipantForm
-                :eventId="currentEvent.id"
-                @success="showParticipantDialog = false"
-                @cancel="showParticipantDialog = false"
-            />
-        </Dialog>
+            :eventId="currentEvent.id"
+        />
+
+        <ReassignTasksForm
+            v-if="participantToRemove"
+            v-model:visible="showReassignTasksDialog"
+            :eventId="currentEvent.id"
+            :participantToRemoveId="participantToRemove.id"
+            :participantToRemoveName="participantToRemove.username"
+            :tasks="currentEvent.tasks || []"
+            :allParticipants="allParticipants"
+            @success="handleReassignSuccess"
+        />
 
         <div class="flex flex-col gap-10 sm:gap-14">
             <EventHeader
